@@ -79,13 +79,33 @@ class Node(object):
             self.jacobi = None
 
         def reset_value(self, recursive=True):
-            
+
             self.value = None
 
             if recursive:
                 for child in self.children:
                     child.reset_value()
             
+class Variable(Node):
+
+    """
+    Variable node has no parent nodes. It is the node we want to train.
+    """
+
+    def __init__(self, dim, init = False, trainable = True, **kwargs):
+        Node.__init__(self, **kwargs)
+        self.dim = dim
+        self.trainable = trainable
+
+        # initialized with value close to 0 for all the entries in the matrix
+        if init:
+            self.value = np.mat(np.random.normal(0, 0.001. self.dim))
+        
+    def set_value(self, value):
+        assert isinstance(value, np.matrix) and value.shape == self.dim
+        self.reset_value()
+        self.value = value
+
             
 
 
