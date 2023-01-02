@@ -40,3 +40,24 @@ class MatMul(Operator):
             col_sort = np.arange(parent.dimension()).reshape(
                 parent.shape()[::-1]).T.ravel()
             return jacobi[row_sort, :][:, col_sort]
+
+
+class Add(Operator):
+    def compute(self):
+        # check if parents all have the same dimension?
+        assert len(self.parents) == 2 and self.parents[0].shape(
+        ) == self.parents[1].shape()
+        self.value = np.mat(np.zeros(self.parents[0].shape()))
+        for parent in self.parents:
+            self.value += parent.value
+
+    def get_jacobi(self, parent):
+        return np.mat(np.eye(self.dimension())) # identity matrix
+
+
+class Step(Operator):
+    def compute(self):
+        self.value = np.mat(np.where(self.parents[0].value >= 0.0, 1.0, 0.0))
+
+    def get_jacobi(self, parent):
+        return np.mat(np.zeros(self.dimension()))
