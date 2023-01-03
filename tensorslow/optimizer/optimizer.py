@@ -84,3 +84,24 @@ class GradientDescent(Optimizer):
             if isinstance(node, Variable) and node.trainable:
                 gradient = self. get_gradient(node)
                 node.set_value(node.value - self.learning_rate * gradient)
+
+class Momentum(Optimizer):
+    def __init__(self, graph, target, learning_rate=0.01, momentum=0.9):
+        Optimizer.__init__(self, graph, target) 
+        self.learning_rate = learning_rate
+        self.momentum = momentum
+        self.v = dict() # previous v
+
+    def _update(self):
+        for node in self.graph.nodes:
+            if isinstance(node, Variable) and node.trainable:
+                gradient = self.get_gradient(node)
+                
+                if node not in self.v:
+                    self.v[node] = gradient
+                else:
+                    self.v[node] = self.momentum * self.v[node] - self.learning_rate * gradient
+                
+                node.set_value(node.value + self.v[node])
+
+

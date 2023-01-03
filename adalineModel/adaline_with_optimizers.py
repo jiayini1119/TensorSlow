@@ -42,7 +42,9 @@ mini_batch_size = 16
 cur_batch_size = 0
 
 # build the optimizer
-optimizer = ts.optimizer.GradientDescent(ts.default_graph, loss, learning_rate)
+# optimizer = ts.optimizer.GradientDescent(ts.default_graph, loss, learning_rate)
+optimizer = ts.optimizer.Momentum(ts.default_graph, loss, learning_rate)
+
 
 for epoch in range(50):
     for i in range(len(train_set)):
