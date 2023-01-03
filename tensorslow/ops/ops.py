@@ -61,3 +61,31 @@ class Step(Operator):
 
     def get_jacobi(self, parent):
         return np.mat(np.zeros(self.dimension()))
+
+
+class ScalarMultiply(Operator):
+    def compute(self):
+        assert self.parents[0].shape() == (1, 1)
+        self.value = np.multiply(self.parents[0].value, self.parents[1].value)
+
+    def get_jacobi(self, parent):
+        assert parent in self.parents
+        if parent is self.parents[0]:
+            return self.parents[1].value.flatten().T
+        else:
+            return np.mat(np.eye(self.parents[1].dimension())) * self.parents[0].value[0, 0]
+
+
+class Multiply(Operator):
+    """
+    parents[0] and parents[1] have the same shape
+    """
+
+    def compute(self):
+        self.value = np.multiply(self.parents[0].value, self.parents[1].value)
+
+    def get_jacobi(self, parent):
+        if parent is self.parents[0]:
+            return np.diag(self.parents[1].value.A1)
+        else:
+            return np.diag(self.parents[0].value.A1)
