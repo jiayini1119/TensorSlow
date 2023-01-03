@@ -2,7 +2,7 @@
 # build computation graph for Adaline and train the model
 
 import numpy as np
-import matrixslow as ms
+import tensorslow as ts
 
 
 male_heights = np.random.normal(171, 6, 500)
@@ -29,15 +29,53 @@ np.random.shuffle(train_set)
 
 # build computation graph
 
-x = ms.core.Variable(dim=(3, 1), init=False, trainable=False)
-label = ms.core.Variable(dim=(1, 1), init=False, trainable=False)
+x = ts.core.Variable(dim=(3, 1), init=False, trainable=False)
+label = ts.core.Variable(dim=(1, 1), init=False, trainable=False)
 
 # We want to train w and b
-w = ms.core.Variable(dim=(1, 3), init=True, trainable=True)
-b = ms.core.Variable(dim=(1, 1), init=True, trainable=True)
+w = ts.core.Variable(dim=(1, 3), init=True, trainable=True)
+b = ts.core.Variable(dim=(1, 1), init=True, trainable=True)
 
 # prediction
-output = ms.ops.Add(ms.ops.MatMul(w, x), b)
-predict = ms.ops.Step(output)
+output = ts.ops.Add(ts.ops.MatMul(w, x), b)
+predict = ts.ops.Step(output)
 
-loss = ms.ops.loss.PerceptionLoss(ms.ops.MatMul(label, output))
+loss = ts.ops.loss.PerceptionLoss(ts.ops.MatMul(label, output))
+
+# train
+learning_rate = 0.0001
+
+for epoch in range(50):
+    for i in range(len(train_set)):
+        features = np.mat(train_set[i, :-1]).T
+        l = np.mat(train_set[i, -1])
+
+        x.set_value(features)
+        label.set_value(l)
+
+        loss.forward()
+
+        w.backward(loss)
+        b.backward(loss)
+
+        # gradient descent
+        new_w = w.value - learning_rate * w.jacobi.T.reshape(w.shape())
+        new_b = b.value - learning_rate * b.jacobi.T.reshape(b.shape())
+        w.set_value(new_w)
+        b.set_value(new_b)
+
+        ts.default_graph.clear_jacobi()
+
+    # feedback
+    pred = []
+    for i in range(len(train_set)):
+        features = np.mat(train_set[i, :-1]).T
+        x.set_value(features)
+        predict.forward()
+        pred.append(predict.value[0, 0])
+
+    pred = np.array(pred) * 2 - 1  # change from 1/0 => 1/-1
+    hit = (train_set[:, -1] == pred).astype(np.int).sum()
+    accuracy = hit / len(train_set)
+
+    print("epoch: {:d}, accuracy: {:.3f}".format(epoch + 1, accuracy))

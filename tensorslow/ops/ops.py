@@ -52,7 +52,7 @@ class Add(Operator):
             self.value += parent.value
 
     def get_jacobi(self, parent):
-        return np.mat(np.eye(self.dimension())) # identity matrix
+        return np.mat(np.eye(self.dimension()))  # identity matrix
 
 
 class Step(Operator):
