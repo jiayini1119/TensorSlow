@@ -1,8 +1,10 @@
+import sys
+sys.path.append('./tensorslow')
 
 # optimize the adaline with Mini Batch Gradient Descent
-
-import numpy as np
 import tensorslow as ts
+import numpy as np
+
 
 male_heights = np.random.normal(171, 6, 500)
 female_heights = np.random.normal(158, 5, 500)

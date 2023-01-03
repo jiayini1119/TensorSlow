@@ -72,3 +72,15 @@ class Optimizer(object):
         self._update()
         self.acc_gradient.clear()
         self.acc_no = 0
+
+
+class GradientDescent(Optimizer):
+    def __init__(self, graph, target, learning_rate=0.01):
+        Optimizer.__init__(self, graph, target)
+        self.learning_rate = learning_rate
+
+    def _update(self):
+        for node in self.graph.nodes:
+            if isinstance(node, Variable) and node.trainable:
+                gradient = self. get_gradient(node)
+                node.set_value(node.value - self.learning_rate * gradient)
