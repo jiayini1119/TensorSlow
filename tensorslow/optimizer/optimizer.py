@@ -104,4 +104,42 @@ class Momentum(Optimizer):
                 
                 node.set_value(node.value + self.v[node])
 
+class AdaGrad(Optimizer):
+    def __init__(self, graph, target, learning_rate=0.01):
+        Optimizer.__init__(self, graph, target)
+        self.learning_rate = learning_rate
+        self.s = dict()
+    
+    def _update(self):
+        for node in self.graph.nodes:
+            if isinstance(node, Variable) and node.trainable:
+                gradient = self.get_gradient(node)
 
+                if node not in self.s:
+                    self.s[node] = np.power(gradient, 2)
+                else:
+                    self.s[node] = self.s[node] + np.power(gradient, 2)
+
+                node.set_value(node.value - self.learning_rate * gradient / (np.sqrt(self.s[node] + 1e-10)))
+
+
+class RMSProp(Optimizer):
+    def __init__(self, graph, target, learning_rate=0.01, beta=0.9):
+        Optimizer.__init__(self, graph, target)
+        self.learning_rate = learning_rate
+        assert 0.0 < beta < 1.0
+        self.beta = beta
+        self.s = dict()
+
+    def _update(self):
+        for node in self.graph.nodes:
+            if isinstance(node, Variable) and node.trainable:
+                gradient = self.get_gradient(node)
+
+                if node not in self.s:
+                    self.s[node] = np.power(gradient, 2)
+                else:
+                    self.s[node] = self.beta * self.s[node] + (1 - self.beta) * np.power(gradient, 2)
+
+                node.set_value(node.value - self.learning_rate *
+                               gradient / (np.sqrt(self.s[node] + 1e-10)))
