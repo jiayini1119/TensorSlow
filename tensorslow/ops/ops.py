@@ -89,3 +89,11 @@ class Multiply(Operator):
             return np.diag(self.parents[1].value.A1)
         else:
             return np.diag(self.parents[0].value.A1)
+
+
+class Logistic(Operator):
+    def compute(self):
+        x = self.parents[0].value
+        self.value = np.mat(1.0 / (1.0 + np.power(np.e, np.where(-x > 1e2, 1e2, -x))))
+    def get_jacobi(self, parent):
+        return np.diag(np.mat(np.multiply(self.value, 1 - self.value)).A1)
