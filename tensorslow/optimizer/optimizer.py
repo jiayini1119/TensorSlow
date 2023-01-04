@@ -143,3 +143,30 @@ class RMSProp(Optimizer):
 
                 node.set_value(node.value - self.learning_rate *
                                gradient / (np.sqrt(self.s[node] + 1e-10)))
+
+class Adam(Optimizer):
+    def __init__(self, graph, target, learning_rate=0.01, beta_1=0.9, beta_2=0.99):
+        Optimizer.__init__(self, graph, target)
+        self.learning_rate = learning_rate
+        assert 0.0 < beta_1 < 1.0
+        assert 0.0 < beta_2 < 1.0
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        
+        self.v = dict()
+        self.s = dict()
+
+    def _update(self):
+        for node in self.graph.nodes:
+            if isinstance(node, Variable) and node.trainable:
+                gradient = self.get_gradient(node)
+
+                if node not in self.s:
+                    self.v[node] = gradient
+                    self.s[node] = np.power(gradient, 2)
+                else:
+                    self.v[node] = self.beta_1 * self.v[node] + (1 - self.beta_1) * gradient
+                    self.s[node] = self.beta_2 * self.s[node] + (1 - self.beta_2) * np.power(gradient, 2)
+
+                node.set_value(node.value - self.learning_rate * self.v[node] / np.sqrt(self.s[node] + 1e-10))
+

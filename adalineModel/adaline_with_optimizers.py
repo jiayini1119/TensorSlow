@@ -45,7 +45,8 @@ cur_batch_size = 0
 # optimizer = ts.optimizer.GradientDescent(ts.default_graph, loss, learning_rate)
 # optimizer = ts.optimizer.Momentum(ts.default_graph, loss, learning_rate)
 # optimizer = ts.optimizer.AdaGrad(ts.default_graph, loss, learning_rate)
-optimizer = ts.optimizer.RMSProp(ts.default_graph, loss, learning_rate)
+# optimizer = ts.optimizer.RMSProp(ts.default_graph, loss, learning_rate)
+optimizer = ts.optimizer.Adam(ts.default_graph, loss, learning_rate)
 
 for epoch in range(50):
     for i in range(len(train_set)):
