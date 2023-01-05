@@ -97,3 +97,18 @@ class Logistic(Operator):
         self.value = np.mat(1.0 / (1.0 + np.power(np.e, np.where(-x > 1e2, 1e2, -x))))
     def get_jacobi(self, parent):
         return np.diag(np.mat(np.multiply(self.value, 1 - self.value)).A1)
+
+
+class SoftMax(Operator):
+
+    @staticmethod
+    def softmax(a):
+        a[a > 1e2] = 1e2  
+        ep = np.power(np.e, a)
+        return ep / np.sum(ep)
+
+    def compute(self):
+        self.value = SoftMax.softmax(self.parents[0].value)
+
+    def get_jacobi(self, parent):
+        raise NotImplementedError("Don't use SoftMax's get_jacobi")
