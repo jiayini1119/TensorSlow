@@ -112,3 +112,12 @@ class SoftMax(Operator):
 
     def get_jacobi(self, parent):
         raise NotImplementedError("Don't use SoftMax's get_jacobi")
+
+class ReLU(Operator):
+    nslope = 0.1
+
+    def compute(self):
+        self.value = np.mat(np.where(self.parents[0].value > 0.0, self.parents[0].value, self.nslope * self.parents[0].value))
+
+    def get_jacobi(self, parent):
+        return np.diag(np.where(self.parents[0].value.A1 > 0.0, 1.0, self.nslope))
