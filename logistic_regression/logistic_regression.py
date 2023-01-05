@@ -1,5 +1,5 @@
 import sys
-sys.path.append('./tensorslow')
+sys.path.append('../tensorslow')
 
 # Step function => logistic function
 # PerceptionLoss => LogLoss

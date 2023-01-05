@@ -1,5 +1,5 @@
 import sys
-sys.path.append('./tensorslow')
+sys.path.append('../tensorslow')
 import tensorslow as ts
 import numpy as np
 

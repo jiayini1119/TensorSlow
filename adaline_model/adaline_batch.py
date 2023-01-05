@@ -1,5 +1,6 @@
 import sys
-sys.path.append('./tensorslow')
+# sys.path.append('./tensorslow')
+sys.path.append('../tensorslow')
 
 # optimize the adaline with Mini Batch Gradient Descent
 import tensorslow as ts
