@@ -121,3 +121,37 @@ class ReLU(Operator):
 
     def get_jacobi(self, parent):
         return np.diag(np.where(self.parents[0].value.A1 > 0.0, 1.0, self.nslope))
+
+class Reshape(Operator):
+    def __init__(self, *parents, **kwargs):
+        super().__init__(*parents, **kwargs)
+        self.to_shape = kwargs.get('shape')
+        assert isinstance(self.to_shape, tuple) and len(self.to_shape) == 2
+
+    def compute(self):
+        self.value = self.parents[0].value.reshape(self.to_shape)
+    
+    def get_jacobi(self, parent):
+        assert parent is self.parents[0]
+        return np.mat(np.eye(self.dimension()))
+
+
+class Concat(Operator):
+    def compute(self):
+        assert len(self.parents) > 0
+        self.value = np.concatenate(
+            [p.value.flatten() for p in self.parents],
+            axis=1
+        ).T
+
+    def get_jacobi(self, parent):
+        assert parent in self.parents
+        dimensions = [p.dimension() for p in self.parents]  
+        pos = self.parents.index(parent) 
+        dimension = parent.dimension()  
+        assert dimension == dimensions[pos]
+        jacobi = np.mat(np.zeros((self.dimension(), dimension)))
+        start_row = int(np.sum(dimensions[:pos]))
+        jacobi[start_row:start_row + dimension,
+               0:dimension] = np.eye(dimension)
+        return jacobi    
