@@ -45,8 +45,7 @@ class MatMul(Operator):
 class Add(Operator):
     def compute(self):
         # check if parents all have the same dimension?
-        assert len(self.parents) == 2 and self.parents[0].shape(
-        ) == self.parents[1].shape()
+        # assert len(self.parents) == 2 and self.parents[0].shape() == self.parents[1].shape()
         self.value = np.mat(np.zeros(self.parents[0].shape()))
         for parent in self.parents:
             self.value += parent.value
