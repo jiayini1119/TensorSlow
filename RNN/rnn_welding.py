@@ -90,7 +90,7 @@ for epoch in range(30):
         s = s[start: end]    
 
         for j in range(len(s)):
-            inputs[i].set_value(np.mat(s[j]).T)
+            inputs[j].set_value(np.mat(s[j]).T)
 
         welding_point.weld(hiddens[j])   
 

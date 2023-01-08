@@ -168,7 +168,7 @@ class Welding(Operator):
         # disconnect with the original parent node
         if len(self.parents) == 1 and self.parents[0] is not None:
             self.parents[0].children.remove(self) # For its parent node, remove the child
-        self.parents.clear # remove the parent node
+        self.parents.clear() # remove the parent node
 
         # relink
         self.parents.append(node)
