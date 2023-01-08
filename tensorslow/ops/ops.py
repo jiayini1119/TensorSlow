@@ -173,3 +173,59 @@ class Welding(Operator):
         # relink
         self.parents.append(node)
         node.children.append(self)
+
+class Convolve(Operator):
+    """
+    parents[0]: input
+    parents[1]: filter
+    """
+    def __init__(self, *parents, **kwargs):
+        assert len(parents) == 2
+        Operator.__init__(self, *parents, **kwargs)
+        self.padded = None
+    
+    def compute(self):
+        data = self.parents[0].value # input image
+        kernel = self.parents[1].value # filter
+        w, h = data.shape
+        kw, kh = kernel.shape
+        hkw, hkh = int(kw / 2), int(kh / 2)
+
+        # padding
+        pw, ph = tuple(np.add(data.shape, np.multiply((hkw, hkh), 2)))
+        self.padded = np.mat(np.zeros((pw, ph)))
+        self.padded[hkw : hkw + w, hkh: hkh + h] = data
+
+        self.value = np.mat(np.zeros((w, h)))
+
+        # 2 dimensional discrete convolution
+        for i in np.arange(hkw, hkw + w):
+            for j in np.arange(hkh, hkh + h):
+                self.value[i - hkw, j - hkh] = np.sum(
+                    np.multiply(self.padded[i - hkw:i - hkw + kw, j - hkh:j - hkh + kh], kernel))
+
+    def get_jacobi(self, parent):
+        data = self.parents[0].value 
+        kernel = self.parents[1].value 
+        w, h = data.shape  
+        kw, kh = kernel.shape  
+        hkw, hkh = int(kw / 2), int(kh / 2)  
+
+        pw, ph = tuple(np.add(data.shape, np.multiply((hkw, hkh), 2)))
+
+        jacobi = []
+        if parent is self.parents[0]:
+            for i in np.arange(hkw, hkw + w):
+                for j in np.arange(hkh, hkh + h):
+                    mask = np.mat(np.zeros((pw, ph)))
+                    mask[i - hkw:i - hkw + kw, j - hkh:j - hkh + kh] = kernel
+                    jacobi.append(mask[hkw:hkw + w, hkh:hkh + h].A1)
+        elif parent is self.parents[1]:
+            for i in np.arange(hkw, hkw + w):
+                for j in np.arange(hkh, hkh + h):
+                    jacobi.append(
+                        self.padded[i - hkw:i - hkw + kw, j - hkh:j - hkh + kh].A1)
+        else:
+            raise Exception("Parent parameter is not connected to the node")
+
+        return np.mat(jacobi)

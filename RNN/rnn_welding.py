@@ -147,10 +147,3 @@ for epoch in range(30):
     
     accuracy = (true == pred).astype(np.int).sum() / len(signal_test)
     print("epoch: {:d}, accuracy: {:.5f}".format(epoch + 1, accuracy))
-
-
-
-
-
-
-
