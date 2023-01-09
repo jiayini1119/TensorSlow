@@ -59,3 +59,10 @@ def conv(feature_maps, input_shape, kernels, kernel_shape, activation):
     
     assert len(outputs) == kernels
     return outputs
+
+def pooling(feature_maps, kernel_shape, stride):
+    outputs = []
+    for fm in feature_maps:
+        outputs.append(MaxPooling(fm, kernel_shape, stride))
+
+    return outputs

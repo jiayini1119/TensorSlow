@@ -229,3 +229,57 @@ class Convolve(Operator):
             raise Exception("Parent parameter is not connected to the node")
 
         return np.mat(jacobi)
+
+class MaxPooling(Operator):
+    def __init__(self, *parents, **kwargs):
+        Operator().__init__(*parents, **kwargs)
+
+        # stride size
+        self.stride = kwargs.get('stride')
+        assert self.stride is not None
+        self.stride = tuple(self.stride)
+        assert isinstance(self.stride, tuple) and len(self.stride) == 2
+
+        # size of the window
+        self.size = kwargs.get('size')
+        assert self.size is not None
+        self.size = tuple(self.size)
+        assert isinstance(self.size, tuple) and len(self.size) == 2
+
+        self.flag = None
+
+    def compute(self):
+        data = self.parents[0].value
+        w, h = data.shape
+        dim = w * h
+        sw, sh = self.stride
+        kw, kh = self.size
+        hkw, hkh = int(kw/2), int(kh/2)
+
+        result = []
+        flag = []
+
+        for i in np.arange(0, w, sw):
+            row = []
+            for j in np.arange(0, h, sh):
+                top, bottom = max(0, i - hkw), min(w, i + hkw + 1)
+                left, right = max(0, j - hkh), min(h, j + hkh + 1)
+                window = data[top:bottom, left:right]
+                row.append(np.max(window)) 
+
+                pos = np.argmax(window)
+                w_width = right - left
+                offset_w, offset_h = top + pos // w_width, left + pos % w_width
+                offset = offset_w * w + offset_h
+                tmp = np.zeros(dim)
+                tmp[offset] = 1
+                flag.append(tmp)
+
+        result.append(row)
+        self.flag = np.mat(flag)
+        self.value = np.mat(result)
+    
+    def get_jacobi(self, parent):
+
+        assert parent is self.parents[0] and self.jacobi is not None
+        return self.flag    
