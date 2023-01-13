@@ -149,8 +149,8 @@ class ROC(Metrics):
 
 
 class ROC_AUC(Metrics):
-    def __init__(self, *parents, **kargs):
-        Metrics.__init__(self, *parents, **kargs)
+    def __init__(self, *parents, **kwargs):
+        Metrics.__init__(self, *parents, **kwargs)
 
     def init(self):
         self.gt_pos_preds = []
