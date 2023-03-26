@@ -1,7 +1,6 @@
 from .proto import serving_pb2, serving_pb2_grpc
 import numpy as np
 import tensorslow as ts
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 import grpc
@@ -68,7 +67,7 @@ class TensorSlowServingService(serving_pb2_grpc.TensorSlowServingServicer):
 
     def deserialized(predict_req):
         """
-        protof format data => NumPy matrix
+        protobuf format data => NumPy matrix
         """
         infer_req_mat_list = []
         for proto_mat in predict_req.data:
@@ -81,7 +80,7 @@ class TensorSlowServingService(serving_pb2_grpc.TensorSlowServingServicer):
 
     def serialize(inference_resp):
         """
-        NumPy Matrix => protof format data
+        NumPy Matrix => protobuf format data
         """
         resp = serving_pb2.PredictResp()
         for mat in inference_resp:
@@ -93,17 +92,23 @@ class TensorSlowServingService(serving_pb2_grpc.TensorSlowServingServicer):
     
 class TensorSlowServer(object):
 
+    """
+    sets up a gRPC server to serve a machine learning model for inference.
+    """
+
     def __init__(self, host, root_dir, model_file_name, weights_file_name, max_workers=10):
 
         self.host = host
         self.max_workers = max_workers
 
+        # create a new gRPC server
         self.server = grpc.server(
             ThreadPoolExecutor(max_workers=self.max_workers))
 
         serving_pb2_grpc.add_TensorSlowServingServicer_to_server(
             TensorSlowServingService(root_dir, model_file_name, weights_file_name), self.server)
 
+        # specify the listening address for the server
         self.server.add_insecure_port(self.host)  
 
     def serve(self):

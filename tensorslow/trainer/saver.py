@@ -59,6 +59,7 @@ class Saver(object):
             if not node.need_save:
                 continue
             node.kwargs.pop('name', None)
+            # extract node information
             node_json = {
                 'node_type': node.__class__.__name__,
                 'name': node.name,
@@ -67,13 +68,14 @@ class Saver(object):
                 'kwargs': node.kwargs                
             }
 
+            # Also add additional information about node dimension
             if node.value is not None:
                 if isinstance(node.value, np.matrix):
                     node_json['dim'] = node.value.shape
             
             graph_json.append(node_json)
 
-            if isinstance(node, Variable):
+            if isinstance(node, Variable): 
                 # Also save the value
                 weights_dict[node.name] = node.value
         

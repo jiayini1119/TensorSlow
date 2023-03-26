@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import serving_pb2 as serving__pb2
+from . import serving_pb2 as serving__pb2
 
 
 class TensorSlowServingStub(object):
