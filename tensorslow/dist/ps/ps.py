@@ -17,6 +17,8 @@ class ParameterService(psrpc.ParameterServiceServicer):
         # mutex
         self.cond = threading.Condition()
         self.push_lock = threading.Lock()
+        self.init_lock = threading.Lock()
+        self.is_init = False
 
     # Push
     def Push(self, push_req, context):
@@ -122,3 +124,21 @@ class ParameterService(psrpc.ParameterServiceServicer):
     
     def _reset_gradients_cache(self):
         self.node_gradients_cache.clear()
+
+    def VariableWeightsInit(self, variable_weights_req, context):
+        """
+        Multiple workers simultaneously send their initial values to the ps;
+        the ps uses the initial value of the first arriving worker and returns it to the other workers.
+        """
+        self.init_lock.acquire() # lock
+        if not self.is_init:
+            self.variable_weights_cache = DistCommon._deserialize_proto_variable_weights(
+                variable_weights_req)
+            print('Parameter service variable weights initialized')
+        
+        resp = DistCommon._serialize_proto_variable_weights(
+            self.variable_weights_cache)
+        self.is_init = True
+        self.init_lock.release() # unlock
+
+        return resp
