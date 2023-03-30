@@ -1,9 +1,10 @@
-from .proto import serving_pb2, serving_pb2_grpc
 import numpy as np
 import tensorslow as ts
 import time
 from concurrent.futures import ThreadPoolExecutor
 import grpc
+
+from .proto import serving_pb2, serving_pb2_grpc
 
 
 class TensorSlowServingService(serving_pb2_grpc.TensorSlowServingServicer):

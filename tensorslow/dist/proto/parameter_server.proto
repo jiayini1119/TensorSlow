@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+import "common.proto";
+
+service ParameterService{
+    //init
+    rpc VariableWeightsInit(VariableWeightsReqResp) returns (VariableWeightsReqResp){}
+
+    //push
+    rpc Push(ParameterPushReq) returns (ParameterPushResp) {}
+
+    //pull
+    rpc Pull(ParameterPullReq) returns (ParameterPullResp) {}
+}
+
+message ParameterPushReq {
+    NodeGradients node_gradients = 1;
+}
+
+message ParameterPushResp {
+}
+
+message ParameterPullReq {
+    repeated Node nodes = 1;
+}
+
+message ParameterPullResp {
+    NodeGradients node_gradients = 1;
+}
