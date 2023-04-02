@@ -4,6 +4,7 @@ from . import optimizer
 from . import layer
 from . import trainer
 from . import util
+from . import dist
 default_graph = core.default_graph
 
 get_node_from_graph = core.get_node_from_graph

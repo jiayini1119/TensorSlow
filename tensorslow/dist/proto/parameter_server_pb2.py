@@ -11,7 +11,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-import common_pb2 as common__pb2
+from . import common_pb2 as common__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16parameter_server.proto\x1a\x0c\x63ommon.proto\":\n\x10ParameterPushReq\x12&\n\x0enode_gradients\x18\x01 \x01(\x0b\x32\x0e.NodeGradients\"\x13\n\x11ParameterPushResp\"(\n\x10ParameterPullReq\x12\x14\n\x05nodes\x18\x01 \x03(\x0b\x32\x05.Node\";\n\x11ParameterPullResp\x12&\n\x0enode_gradients\x18\x01 \x01(\x0b\x32\x0e.NodeGradients2\xbf\x01\n\x10ParameterService\x12I\n\x13VariableWeightsInit\x12\x17.VariableWeightsReqResp\x1a\x17.VariableWeightsReqResp\"\x00\x12/\n\x04Push\x12\x11.ParameterPushReq\x1a\x12.ParameterPushResp\"\x00\x12/\n\x04Pull\x12\x11.ParameterPullReq\x1a\x12.ParameterPullResp\"\x00\x62\x06proto3')

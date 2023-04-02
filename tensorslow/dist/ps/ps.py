@@ -1,7 +1,10 @@
 import threading
+import grpc
+import time
 from ..dist import DistCommon
 from ..proto import parameter_server_pb2 as pspb
 from ..proto import parameter_server_pb2_grpc as psrpc
+from concurrent.futures import ThreadPoolExecutor
 
 class ParameterService(psrpc.ParameterServiceServicer):
     def __init__(self, worker_num, sync=True):
@@ -142,3 +145,59 @@ class ParameterService(psrpc.ParameterServiceServicer):
         self.init_lock.release() # unlock
 
         return resp
+    
+class ParameterServiceClient(object):
+
+    def __init__(self, ps_host):
+        self.stub = psrpc.ParameterServiceStub(
+            grpc.insecure_channel(ps_host))
+
+        assert self.stub is not None
+        print('[GRPC] Connected to parameter service: {}'.format(ps_host))
+
+    def variable_weights_init(self, var_weights_dict):
+        init_req = DistCommon._serialize_proto_variable_weights(
+            var_weights_dict)
+
+        init_resp = self.stub.VariableWeightsInit(init_req)
+
+        duplicated_var_weights_dict = DistCommon._deserialize_proto_variable_weights(
+            init_resp)
+
+        return duplicated_var_weights_dict
+    
+    def push_gradients(self, acc_gradients, acc_no):
+        proto_node_gradients = DistCommon._serialize_proto_node_gradients(acc_gradients)
+        proto_node_gradients.acc_no = acc_no
+        # send push request
+        push_req = pspb.ParameterPushReq(node_gradients=proto_node_gradients)
+        resp = self.stub.Push(push_req)
+        return resp
+    
+    def pull_gradients(self):
+        pull_req = pspb.ParameterPullReq()
+        pull_resp = self.stub.Pull(pull_req)
+        node_gradients_dict = DistCommon._deserialize_proto_node_gradients(
+            pull_resp.node_gradients)
+        return node_gradients_dict
+
+class ParameterServiceServer(object):
+    def __init__(self, cluster_conf, sync=True, max_workers=10):
+        self.worker_num = len(cluster_conf['workers'])
+        self.host = cluster_conf['ps'][0]
+        self.sync = sync
+        self.max_workers = max_workers
+
+        self.server = grpc.server(ThreadPoolExecutor(max_workers=self.max_workers))
+        psrpc.add_ParameterServiceServicer_to_server(
+            ParameterService(self.worker_num, self.sync), self.server)
+        self.server.add_insecure_port(self.host)
+
+    def serve(self):
+        self.server.start()
+        print('Parameter server (mode: {}) running on {} and worker num {}'.format('Sync' if self.sync else 'Async', self.host, self.worker_num))
+        try:
+            while True:
+                time.sleep(60 * 60 * 24)
+        except KeyboardInterrupt:
+            self.server.stop(0)
