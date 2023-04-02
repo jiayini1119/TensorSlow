@@ -24,7 +24,7 @@ class RingAllReduceService(arrpc.RingAllReduceServiceServicer):
         return common_pb2.VariableWeightsReqResp()
     
 
-    def Receive(self, send_req, context):
+    def Recieve(self, send_req, context):
         stage = send_req.stage
         node_gradients_dict = DistCommon._deserialize_proto_node_gradients(send_req.node_gradients)
         # According to the mode (scatter or gather)

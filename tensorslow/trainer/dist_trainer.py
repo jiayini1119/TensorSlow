@@ -4,7 +4,9 @@ from ..core.graph import default_graph
 from ..dist import ps, allreduce
 from .trainer import Trainer
 import threading
+import math
 
+### PS ###
 class DistTrainerParameterServer(Trainer):
 
     def __init__(self, *args, **kargs):
@@ -34,6 +36,7 @@ class DistTrainerParameterServer(Trainer):
 
         self.optimizer.update(node_gradients_dict)
 
+### Ring AllReduce ###
 class DistTrainerRingAllReduce(Trainer):
     def __init__(self, *args, **kargs):
         Trainer.__init__(self, *args, **kargs)
@@ -64,9 +67,9 @@ class DistTrainerRingAllReduce(Trainer):
         self._partition_variables()
 
         # for sending and receiving the gradients
-        self.is_recieved = False
-        self.recieved_gradients = None
-        self.recieved_acc_no = None
+        self.is_received = False
+        self.received_gradients = None
+        self.received_acc_no = None
         self.cond = threading.Condition()
 
         # server
@@ -115,7 +118,7 @@ class DistTrainerRingAllReduce(Trainer):
         # scatter (N - 1) times
         for scatter_index in range(self.step):
             gradients_part = self._get_gradients_partition()
-            cur_acc_no = self.optimizer.acc_no if scatter_index == 0 else self.recieved_acc_no
+            cur_acc_no = self.optimizer.acc_no if scatter_index == 0 else self.received_acc_no
 
             # send the scattered block to its right neighbour
             self.client.send(gradients_part, cur_acc_no, 'scatter')
@@ -132,18 +135,76 @@ class DistTrainerRingAllReduce(Trainer):
         self.optimizer.update()
 
     def _partition_variables(self):
-        return
+        '''
+        partition the trainable variables according to the number of workers
+        '''
+        var_num = len(self.variables)
+        part_length = math.ceil(var_num / self.worker_num)
+        assert part_length > 0
+
+        start = 0
+        end = start + part_length
+        for i in range(self.worker_num - 1):
+            self.partition.append((start, end))
+            start = end
+            end = start + part_length
+
+        self.partition.append((start, var_num))
 
 
     def _get_gradients_partition(self):
-        return
+        start, end = self.partition[self.cur_partion_index]
+        part_variables = self.variables[start:end]
+        self.cur_partion_index = (
+            self.cur_partion_index + self.step) % self.worker_num
+        part_gradients = dict()
+        for var in part_variables:
+            part_gradients[var] = self.optimizer.acc_gradient[var]
+        return part_gradients
 
 
-    def _scatter_callback(self):
-        return
+    def _scatter_callback(self, node_gradients_dict, acc_no):
+        if self.cond.acquire():
+            while self.is_received:
+                self.cond.wait()
+            self.received_gradients = node_gradients_dict
+            self.received_acc_no = acc_no
+            self.is_received = True
+            self.cond.notify_all()
+            self.cond.release()
+        else:
+            self.cond.wait()
 
-    def _gather_callback(self):
-        return 
+    def _gather_callback(self, node_gradients_dict):
+        if self.cond.acquire():
+            while self.is_received:
+                self.cond.wait()
 
-    def _wait_for_recieve(self):
-        return
+            self.received_gradients = node_gradients_dict
+            self.is_received = True
+            self.cond.notify_all()
+            self.cond.release()
+        else:
+            self.cond.wait()
+
+    def _wait_for_recieve(self, stage):
+        if self.cond.acquire():
+            while not self.is_received:
+                self.cond.wait()
+
+            # scatter: accumulate gradient and add on the batch size
+            if stage == 'scatter':
+                self.optimizer.apply_gradients(
+                    self.received_gradients,  summarize=True, acc_no=self.received_acc_no)
+
+            # All-gather: no change on the batch size
+            else:
+                self.optimizer.apply_gradients(
+                    self.received_gradients, summarize=False, acc_no=self.optimizer.acc_no)
+
+            self.is_received = False
+
+            self.cond.notify_all()
+            self.cond.release()
+        else:
+            self.cond.wait()
