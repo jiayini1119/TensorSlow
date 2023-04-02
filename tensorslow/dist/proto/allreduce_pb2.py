@@ -11,7 +11,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-import common_pb2 as common__pb2
+from . import common_pb2 as common__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x61llreduce.proto\x1a\x0c\x63ommon.proto\"\x8e\x01\n\x10RingAllReduceReq\x12&\n\x05stage\x18\x01 \x01(\x0e\x32\x17.RingAllReduceReq.Stage\x12&\n\x0enode_gradients\x18\x02 \x01(\x0b\x32\x0e.NodeGradients\"*\n\x05Stage\x12\x08\n\x04INIT\x10\x00\x12\x0b\n\x07SCATTER\x10\x01\x12\n\n\x06GATHER\x10\x02\"\x13\n\x11RingAllReduceResp2\x95\x01\n\x14RingAllReduceService\x12I\n\x13VariableWeightsInit\x12\x17.VariableWeightsReqResp\x1a\x17.VariableWeightsReqResp\"\x00\x12\x32\n\x07Recieve\x12\x11.RingAllReduceReq\x1a\x12.RingAllReduceResp\"\x00\x62\x06proto3')

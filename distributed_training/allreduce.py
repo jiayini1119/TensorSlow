@@ -3,17 +3,12 @@ sys.path.append('../tensorslow')
 
 import numpy as np
 import argparse
-from tensorslow.dist.ps import ps
-# from tensorslow_serving.exporter import Exporter
-from tensorslow.trainer import DistTrainerParameterServer
 import tensorslow as ts
+from tensorslow.trainer import DistTrainerRingAllReduce
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.datasets import fetch_openml
 
 cluster_conf = {
-    "ps": [
-        "localhost:5000"
-    ],
     "workers": [
         "localhost:6000",
         "localhost:6002",
@@ -23,6 +18,7 @@ cluster_conf = {
 
 def train(worker_index):
     img_shape = (28, 28)
+
     X, y = fetch_openml('mnist_784', version=1, return_X_y=True, cache=True)
 
     start = worker_index * 1000
@@ -61,29 +57,19 @@ def train(worker_index):
 
     accuracy = ts.ops.metrics.Accuracy(output, one_hot)
 
-    # use DistTrainerParameterServer as the trainer
-    trainer = DistTrainerParameterServer([x], one_hot, loss, optimizer,
-                                         epoches=10, batch_size=32,
+    # use DistTrainerRingAllReduce as the trainer
+    trainer = DistTrainerRingAllReduce([x], one_hot, loss, optimizer,
+                                       epoches=10, batch_size=32,
                                          eval_on_train=True, metrics_ops=[accuracy],
                                          cluster_conf=cluster_conf, worker_index=worker_index)
-    
+
     trainer.train_and_eval({x.name: X}, one_hot_label,
                            {x.name: X}, one_hot_label)
     
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--role', type=str)
     parser.add_argument('--worker_index', type=int)
-
     args = parser.parse_args()
-
-    role = args.role
-
-
-    if role == 'ps':
-        server = ps.ParameterServiceServer(cluster_conf, sync=True)
-        server.serve()
-
-    else: # worker
-        worker_index = args.worker_index
-        train(worker_index)
+    worker_index = args.worker_index
+    train(worker_index)
